@@ -8,10 +8,18 @@ Where `{AddIns}` is your Fusion 360 "AddIns" folder:
 
 ```
 cd {AddIns}
-git clone https://jon-harper/clock-3-scripts Clock3Scripts
+git clone https://jon-harper/Clock3Scripts Clock3Scripts
 ```
 
 On Windows, this path is "%APPDATA%\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"
+
+## Usage
+
+In Fusion, start the add-in. Your Solid Scripts toolbar will have a new group at the end with several utilities.
+
+- The BOM Generator assists in creating a new Bill of Materials. See the main [Clock 3 repository](https://github.com/jon-harper/clock-3) for source data (in the `BOM` folder).
+- Frame Tools works on the Master model to show just the frame and brackets, just the frame and tee nuts, or reveal everything.
+- Other functionality will be added later.
 
 ## License
 
