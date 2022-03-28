@@ -7,7 +7,7 @@ def run(context):
     try:
         ui = futil.app.userInterface
         workspace = ui.workspaces.itemById(config.WORKSPACE_ID)
-        panel = workspace.toolbarPanels.add(config.PANEL_ID, config.PANEL_NAME,
+        workspace.toolbarPanels.add(config.PANEL_ID, config.PANEL_NAME,
                                             config.PANEL_BESIDE_ID, False)
         commands.start()
     except:
