@@ -1,4 +1,4 @@
-import traceback, os
+import traceback
 import adsk.core, adsk.fusion
 from ...lib import fusion360utils as futil
 from ... import config
@@ -11,9 +11,9 @@ CMD_ID = f'clk3_frameHelperDialog'
 CMD_NAME = 'Frame Tools'
 CMD_Description = 'Displays the frame and roll in tee nuts to help documentation'
 
-COMMAND_BESIDE_ID = 'cl3_bomDialog'
+COMMAND_BESIDE_ID = 'clk3_bomDialog'
 
-ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
+ICON_FOLDER = config.local_icon_folder(__file__)
 
 # Local list of event handlers used prevent garbage collection.
 local_handlers = []

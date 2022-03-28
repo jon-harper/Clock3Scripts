@@ -23,3 +23,7 @@ PANEL_DESCRIPTIOPN = 'Tools for the Clock 3 project.'
 PANEL_BESIDE_ID = 'SolidScriptsAddinsPanel'
 
 WORKSPACE_ID = 'FusionSolidEnvironment'
+
+def local_icon_folder(script_filename) -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(script_filename)), 'resources')
+    

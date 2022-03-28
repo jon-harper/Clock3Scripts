@@ -14,7 +14,7 @@ CMD_NAME = 'Generate BOM'
 CMD_Description = 'Bill of Materials generator for the Clock 3 project'
 
 COMMAND_BESIDE_ID = ''
-ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
+ICON_FOLDER = config.local_icon_folder(__file__)
 
 local_handlers = []
 dialog = None
@@ -49,7 +49,7 @@ def stop():
 
 def command_created(args: adsk.core.CommandCreatedEventArgs):
     global dialog, local_handlers
-    dialog = BomDialog(args.command, local_handlers)
+    dialog = BomDialog(args.command, ICON_FOLDER, local_handlers)
     futil.add_handler(args.command.destroy, command_destroy, local_handlers=local_handlers)
 
 def command_destroy(args: adsk.core.CommandEventArgs):
