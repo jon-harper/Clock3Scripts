@@ -1,5 +1,4 @@
 import adsk.core
-import os
 from ...lib import fusion360utils as futil
 
 from .dialog import BomDialog
@@ -9,7 +8,7 @@ from ...import config
 app = futil.app
 ui = app.userInterface
 
-CMD_ID = f'clk3_bomDialog'
+CMD_ID = f'{config.ADDIN_PREFIX}_bomDialog'
 CMD_NAME = 'Generate BOM'
 CMD_Description = 'Bill of Materials generator for the Clock 3 project'
 
@@ -49,7 +48,7 @@ def stop():
 
 def command_created(args: adsk.core.CommandCreatedEventArgs):
     global dialog, local_handlers
-    dialog = BomDialog(args.command, ICON_FOLDER, local_handlers)
+    dialog = BomDialog(args.command, CMD_ID, ICON_FOLDER, local_handlers)
     futil.add_handler(args.command.destroy, command_destroy, local_handlers=local_handlers)
 
 def command_destroy(args: adsk.core.CommandEventArgs):

@@ -16,6 +16,7 @@ DEBUG = True
 # part of the ID to better ensure the ID is unique.
 ADDIN_PATH = os.path.dirname(__file__)
 ADDIN_NAME = os.path.basename(ADDIN_PATH)
+ADDIN_PREFIX = 'clk3'
 
 PANEL_ID = 'Clock3Panel'
 PANEL_NAME = 'Clock 3 Tools'
@@ -23,6 +24,11 @@ PANEL_DESCRIPTIOPN = 'Tools for the Clock 3 project.'
 PANEL_BESIDE_ID = 'SolidScriptsAddinsPanel'
 
 WORKSPACE_ID = 'FusionSolidEnvironment'
+
+# Prefixes used for parsing part types
+PART_PREFIX = 'PN'
+MATERIAL_PREFIX = 'MN'
+SUPPLY_PREFIX = 'UN'
 
 def local_icon_folder(script_filename) -> str:
     return os.path.join(os.path.dirname(os.path.abspath(script_filename)), 'resources')
