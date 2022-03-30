@@ -11,7 +11,7 @@ cd {AddIns}
 git clone https://jon-harper/Clock3Scripts Clock3Scripts
 ```
 
-On Windows, this path is "%APPDATA%\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns"
+On Windows, this path is `%APPDATA%\Autodesk\Autodesk Fusion 360\API\AddIns`
 
 ## Usage
 
