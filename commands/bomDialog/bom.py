@@ -4,7 +4,7 @@ import adsk.core, adsk.fusion
 from ...lib import fusion360utils as futil
 from ... import config
 
-class MergeBomError(Exception):
+class MergeBomException(Exception):
     """
     Internally raised exception for ill-formed input.
     """

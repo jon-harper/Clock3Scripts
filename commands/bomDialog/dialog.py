@@ -154,7 +154,7 @@ class BomDialog(Dialog):
             occurences = self.getOccurrences(design)
 
             # Gather information about each unique component
-            model_parts = bom.generate_bom(occurences)
+            model_parts = bom.extract_model_data(occurences)
             source_data = data_parser.import_source_data(self.currentSource, True)
             try:
                 (parts, problems) = bom.merge_source_data(
@@ -162,7 +162,7 @@ class BomDialog(Dialog):
                         source_data, 
                         self.getIncludeMaterials(), 
                         self.getIncludeSupplies())
-            except bom.MergeBomError as e:
+            except bom.MergeBomException as e:
                 self.warn(f'Cannot process part {e.part_id}; aborting')
                 return
             if len(problems):
