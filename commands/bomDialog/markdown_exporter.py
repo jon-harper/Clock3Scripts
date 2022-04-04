@@ -9,7 +9,25 @@ BOM_STRINGS = {
 
 The columns of this list are abbreviated for readability and reference. The
 [Excel spreadsheet](https://github.com/jon-harper/clock-3/blob/main/BOM/bill_of_materials.xlsx)
-version contains columns that are helpful in actual sourcing.
+version contains additional columns that are helpful in sourcing.
+
+!!! warning
+    The script that auto-generates this list cannot parse decimal values. Anything measured in length
+    is measured in centimeters (cm) instead of meters (m) to work around this.
+	
+!!! note
+    Materials are used in fabricating parts found later in the Bill of Materials or cable
+    list. Some parts, particularly the acrylic and wood panels, will likely require outside
+    fabrication.
+
+!!! note
+    All reference URLs and suppliers are purely for assistance in sourcing materials and are
+    not endorsed.
+
+!!! note
+    The "Supplies" category includes a large number of components that are often already in the
+    hands of experienced makers. As such, the list is primarily for reference and is not formally
+    part of the Bill of Materials.
 
 """,
     "section" : \
@@ -26,37 +44,6 @@ version contains columns that are helpful in actual sourcing.
 
 class MarkdownExportError(Exception):
     pass
-
-def split_by_section(data: OrderedDict, section_key: str, headers : Iterable) -> OrderedDict:
-    #Grab what sections are in the data
-    sections = []
-    for row in data.values():
-        if row[section_key] not in sections:
-            sections.append(row[section_key])
-    
-    #result: OrderedDict[str, OrderedDict[str, str]]
-    result = OrderedDict.fromkeys(sections, OrderedDict.fromkeys(headers, ''))
-    
-    #Determine which columns to include. 'ID' is a dict key, so we flag it separately.
-    columns = list(headers)
-    if 'ID' in columns:
-        columns.remove('ID')
-
-    #Iterate over each part
-    for part_id in data.keys():
-        #Capture both the ID and data
-        part : OrderedDict = data[part_id]
-        
-        #Get the section from the data dict
-        section : str = part[section_key]
-        section_dict : OrderedDict = result[section]
-        
-        #Iterate over the OrderedDict and copy values, but only with the headers we want
-        item = OrderedDict.fromkeys(headers, '')
-        for column in columns:
-            item[column] = part[column]
-        section_dict[part_id] = item
-    return result
 
 def format_sectioned_table(data : OrderedDict, section_key : str) -> str:
     LINE_FORMAT = '| {id} | {description} | {qty} | {uom} | {notes} |\n'
@@ -96,6 +83,9 @@ def format_sectioned_table(data : OrderedDict, section_key : str) -> str:
             
 
 def format_table(data : OrderedDict, include_id : bool = True) -> str:
+    """
+    Formats a part list for Markdown
+    """
     NEW_LINE = '\n|'
     HEADERS = ('Description', 'UOM', 'Qty', 'RefUrl', 'Notes')
     HEADERS_ID = ('ID', 'Description', 'UOM', 'Qty', 'RefUrl', 'Notes')
@@ -120,6 +110,7 @@ def format_table(data : OrderedDict, include_id : bool = True) -> str:
     for part_num in data.keys():
         part : OrderedDict = data[part_num]
         result += NEW_LINE
+        # only include the part number if requested
         if include_id:
             result += f' {part_num} |'
         for key in headers:
