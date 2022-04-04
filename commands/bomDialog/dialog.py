@@ -1,17 +1,18 @@
 #Author: Jonathan Harper, 2022
 #Description: Fusion 360 script. Extracts basic BOM data from active components containing "PN" in the part number field.
-#Original Author: Autodesk Inc.
+#
+#Based on the fairly elementary ExportBOM script that ships with Fusion.
 
-from tkinter.filedialog import FileDialog
 import adsk.core, adsk.fusion, traceback, os
+
 from ...lib import fusion360utils as futil
 
-from . import data_parser
-from . import bom
+from . import data_parser, bom, markdown_exporter
 from ... import config
 
 INITIAL_FILENAME = 'bom.csv'
-FILE_FILTER = 'Comma Separated Values (*.csv);;All files(*.*)'
+CSV_FILTER = 'Comma Separated Values(*.csv);;All files(*.*)'
+MARKDOWN_FILTER = 'Markdown Files(*.md);;All files(*.*)'
 class Dialog:
     def __init__(self, command: adsk.core.Command, command_prefix: str, resource_path: str, local_handlers: list,) -> None:
         self.app = adsk.core.Application.get()
@@ -22,7 +23,7 @@ class Dialog:
         self.inputs = command.commandInputs
         self.local_handlers = local_handlers
 
-    def warn(self, message: str, title: str = 'Extract BOM') -> None:
+    def warn(self, message: str, title: str = 'Warning') -> None:
         self.ui.messageBox(message, title)
 
     def inputFullName(self, shortname: str) -> str:
@@ -32,7 +33,24 @@ class Dialog:
         return self.inputs.itemById(self.inputFullName(shortname))
 
 
+# Command Inputs:
+# Files Group Box       'fileGroup'         GroupCommandInput
+#   Source File         'sourceBox'         BoolValueInput
+#   Source Text         'sourceTextBox'     TextBoxCommandInput
+#   Export Format       'exportFormatBox'   DropDownCommandInput
+#   Export Dest         'exportDestBox'     BoolValueInput
+#   Export Dest Text    'exportDestTextBox' TextBoxCommandInput
+# Components Group Box  'componentGroup'    GroupCommandInput
+#   Export Type         'exportTypeButton'  DropDownCommandInput
+#   Component Selection 'selectionInput'    SelectionInput
+# Options Group Box     'optionsGroup'      GroupCommandInput
+#   Materials Button    'materialsButton'   BoolValueInput
+#   Supplies Button     'suppliesButton'    BoolValueInput
 class BomDialog(Dialog):
+    """
+    Controls the `CommandInput` objects and reacts to Command events.
+    """
+
     def __init__(self, command: adsk.core.Command, command_prefix: str, resource_path: str, local_handlers) -> None:
         super().__init__(command, command_prefix, resource_path, local_handlers)
         futil.log(f'Bill of Materials Command Created Event')
@@ -53,6 +71,12 @@ class BomDialog(Dialog):
         sourceTextBox.isFullWidth = True
         sourceTextBox.tooltip = 'This is the current source .csv file to process.'
         sourceTextBox.tooltipDescription = 'This file must be properly properly formatted. The latest version is in the Clock 3 git repository.'
+
+        exportFormatBox = children.addDropDownCommandInput(self.inputFullName('exportFormatBox'),
+                                    'Export Format', adsk.core.DropDownStyles.LabeledIconDropDownStyle)
+        items = exportFormatBox.listItems
+        items.add('Comma Separated Values', True)
+        items.add('Markdown File', False)
 
         exportDestBox = children.addBoolValueInput(self.inputFullName('exportDestBox'),
                                     'Export File Location', False,  os.path.join(self.resource_path, 'export'))
@@ -123,14 +147,18 @@ class BomDialog(Dialog):
         is toggled on.
         """
         if args.input == self.inputByShortName('sourceBox'):
-            res = os.path.normpath(self.showFileDialog('Select source file', *os.path.split(self.currentSource), False, FILE_FILTER, 0, False))
+            res = os.path.normpath(self.showFileDialog('Select source file', *os.path.split(self.currentSource), False, CSV_FILTER, 0, False))
             if len(res) and os.path.exists(res):
                 box = adsk.core.TextBoxCommandInput.cast(self.inputByShortName('sourceTextBox'))
                 assert(box)
                 self.currentSource = res
                 box.text = res
         elif args.input == self.inputByShortName('exportDestBox'):
-            res = os.path.normpath(self.showFileDialog('Select output file', *os.path.split(self.currentDest), True, FILE_FILTER, 0, False))
+            if self.formatBoxIndex() == 0:
+                filter = CSV_FILTER
+            else:
+                filter = MARKDOWN_FILTER                
+            res = os.path.normpath(self.showFileDialog('Select output file', *os.path.split(self.currentDest), True, filter, 0, False))
             if len(res) and os.path.exists(os.path.split(res)[0]):
                 box = adsk.core.TextBoxCommandInput.cast(self.inputByShortName('exportDestTextBox'))
                 assert(box)
@@ -138,8 +166,23 @@ class BomDialog(Dialog):
                 self.currentDest = res
         elif args.input == self.inputByShortName('exportType'):
             self.updateSelectedIndex()
+        elif args.input == self.inputByShortName('exportFormatBox'):
+            formatBox = adsk.core.DropDownCommandInput.cast(args.input)
+            old_path = self.currentDest
+            if formatBox.selectedItem.index == 0 and old_path.endswith('.md'):
+                new_path = old_path.removesuffix('.md') + '.csv'
+            elif formatBox.selectedItem.index == 1 and old_path.endswith('.csv'):
+                new_path = old_path.removesuffix('.csv') + '.md'
+            else:
+                self.warn('Could not auto-correct export file extension to new format.')
+                return #bail
+            destTextBox = adsk.core.TextBoxCommandInput.cast(self.inputByShortName('exportDestTextBox'))
+            destTextBox.text = new_path
         else:
             pass
+    def formatBoxIndex(self) -> int:
+        formatBox = adsk.core.DropDownCommandInput.cast(self.inputByShortName('exportFormatBox'))
+        return formatBox.selectedItem.index
 
     def executeEvent(self, event: adsk.core.CommandEventArgs) -> None:
         """
@@ -157,19 +200,33 @@ class BomDialog(Dialog):
             model_parts = bom.extract_model_data(occurences)
             source_data = data_parser.import_source_data(self.currentSource, True)
             try:
+                # This does the grunt work for scraping the model
                 (parts, problems) = bom.merge_source_data(
                         model_parts, 
                         source_data, 
                         self.getIncludeMaterials(), 
                         self.getIncludeSupplies())
+                # Check for empty part IDs and clear
+                empty_ids = []
+                for (key, part) in parts.items():
+                    if part['Qty'] == 0:
+                        empty_ids.append(key)
+                for key in empty_ids:
+                    parts.pop(key)
+
             except bom.MergeBomException as e:
                 self.warn(f'Cannot process part {e.part_id}; aborting')
                 return
+
             if len(problems):
                 self.warn(str(problems), 'Parts not found in source file')
             else:
-                data_parser.export_data(self.currentDest, parts)
+                if self.formatBoxIndex() == 0:
+                    data_parser.export_csv_bom(self.currentDest, parts)
+                else:
+                    markdown_exporter.export_markdown_bom(self.currentDest, parts, section_key='Type', include_id=False)
                 self.ui.messageBox('Bill of Materials extracted.', 'Extract BOM')
+            
 
         except:
             self.warn('Failed:\n{}'.format(traceback.format_exc()))

@@ -9,7 +9,7 @@ from typing import OrderedDict
 # 
 ####
 # Export header:
-# ('ID', 'Type', 'Description', 'UOM', 'Value', 'RefSupplier', 'RefUrl', 'RefMfgr', 'RefMfgrPN', 'Notes')
+# ('ID', 'Type', 'Description', 'UOM', 'Qty', 'RefSupplier', 'RefUrl', 'RefMfgr', 'RefMfgrPN', 'Notes')
 #
 
 class ImportError(Exception):
@@ -26,7 +26,7 @@ def parse_row_data(row: OrderedDict[str, str], include_value = False) -> dict:
             'Type': row['Type'],
             'Description': row['Description'],
             'UOM': row['UOM'],
-            'Value' : 0, #we read in the default value later
+            'Qty' : 0, #we read in the default value later
             'RefSupplier': row['RefSupplier'],
             'RefUrl': row['RefUrl'],
             'RefMfgr': row['RefMfgr'],
@@ -34,7 +34,7 @@ def parse_row_data(row: OrderedDict[str, str], include_value = False) -> dict:
             'Notes': row['Notes'] 
         }
     if include_value and row['DefaultValue'] is not None and row['DefaultValue'].isnumeric():
-        result['Value'] = int(row['DefaultValue'])
+        result['Qty'] = int(row['DefaultValue'])
     return result
 
 def import_source_data(filepath: str = None,
@@ -49,18 +49,22 @@ def import_source_data(filepath: str = None,
 
     Returns a dict of dicts with string keys. The part number is the key, e.g. 'PN001' is a key.
     """
-    result = {}
     try:
+        raw_result = {}
         with open(filepath, 'r', newline='') as datafile:
             fieldnames=('ID', 'Type', 'Description', 'UOM', 'DefaultValue', 'RefSupplier', 'RefUrl', 'RefMfgr', 'RefMfgrPN', 'Notes')
             reader = csv.DictReader(datafile, fieldnames=fieldnames, dialect='excel')
             for row in reader:
-                result[row['ID']] = parse_row_data(row, include_defaults)
+                raw_result[row['ID']] = parse_row_data(row, include_defaults)
+        keys = sorted(raw_result.keys())
+        result = OrderedDict()
+        for key in keys:
+            result[key] = raw_result[key]
+        return result
     except Exception as e:
         raise ImportError('Failed to process source file') from e
-    return result
 
-def export_data(filepath: str, data: dict) -> None:
+def export_csv_bom(filepath: str, data: dict) -> None:
     """
     Exports data for a bill of materials.
 
@@ -69,11 +73,11 @@ def export_data(filepath: str, data: dict) -> None:
     """
     try:
         with open(filepath, 'w', newline='') as datafile:
-            fieldnames=('ID', 'Type', 'Description', 'UOM', 'Value', 'RefSupplier', 'RefUrl', 'RefMfgr', 'RefMfgrPN', 'Notes')
+            fieldnames=('ID', 'Type', 'Description', 'UOM', 'Qty', 'RefSupplier', 'RefUrl', 'RefMfgr', 'RefMfgrPN', 'Notes')
             writer = csv.DictWriter(datafile, fieldnames, dialect=csv.excel)
             writer.writeheader()
             for part_num in data.keys():
-                if data[part_num]['Value'] == 0:
+                if data[part_num]['Qty'] == 0:
                     continue
                 outdata = data[part_num]
                 outdata['ID'] = part_num

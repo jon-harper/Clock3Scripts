@@ -78,7 +78,7 @@ def merge_source_data(bom: dict,
                 or (include_materials and line_id.startswith(config.MATERIAL_PREFIX)) \
                 or (include_supplies and line_id.startswith(config.SUPPLY_PREFIX)):
             try:
-                parts[line_id]['Value'] = line['count']
+                parts[line_id]['Qty'] = line['count']
             except Exception as e:
                 futil.log(f'{line_id} failed: {line}')
                 continue
