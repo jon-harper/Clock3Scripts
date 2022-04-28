@@ -12,22 +12,18 @@ The columns of this list are abbreviated for readability and reference. The
 version contains additional columns that are helpful in sourcing.
 
 !!! warning
-    The script that auto-generates this list cannot parse decimal values. Anything measured in length
+    The script that auto-generates this list does not read decimal values. Anything measured in length
     is measured in centimeters (cm) instead of meters (m) to work around this.
-	
+    
 !!! note
-    Materials are used in fabricating parts found later in the Bill of Materials or cable
-    list. Some parts, particularly the acrylic and wood panels, will likely require outside
-    fabrication.
-
-!!! note
-    All reference URLs and suppliers are purely for assistance in sourcing materials and are
-    not endorsed.
-
-!!! note
-    The "Supplies" category includes a large number of components that are often already in the
-    hands of experienced makers. As such, the list is primarily for reference and is not formally
-    part of the Bill of Materials.
+    - Materials are used in fabricating parts found later in the Bill of Materials or cable
+      list. Some parts, particularly the acrylic and wood panels, will likely require outside
+      fabrication.
+    - All reference URLs and suppliers are purely for assistance in sourcing materials and are
+      not endorsed.
+    - The "Supplies" category includes a large number of components that are often already in the
+      hands of experienced makers. As such, the list is primarily for reference and is not formally
+      part of the Bill of Materials.
 
 """,
     "section" : \
